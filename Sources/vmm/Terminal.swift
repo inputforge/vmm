@@ -22,7 +22,9 @@ func enterRawMode() throws {
         throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
     }
 
-    savedTermios = original
+    if savedTermios == nil {
+        savedTermios = original
+    }
 
     if !registeredTerminalRestore {
         atexit {

@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ASSET_DIR="$ROOT_DIR/assets/ubuntu-resolute-arm64"
 SEED_DIR="$ASSET_DIR/seed"
+VMLINUX="$ASSET_DIR/vmlinux"
 
 BASE_URL="https://cloud-images.ubuntu.com/resolute/current"
 UNPACKED_URL="$BASE_URL/unpacked"
@@ -26,6 +27,40 @@ download() {
 download "$UNPACKED_URL/resolute-server-cloudimg-arm64-vmlinuz-generic" "$ASSET_DIR/vmlinuz"
 download "$UNPACKED_URL/resolute-server-cloudimg-arm64-initrd-generic" "$ASSET_DIR/initrd.img"
 download "$BASE_URL/resolute-server-cloudimg-arm64.squashfs" "$ASSET_DIR/root.squashfs"
+
+if [[ ! -f "$VMLINUX" ]]; then
+  if ! command -v zstd >/dev/null 2>&1; then
+    echo "error: zstd is required to extract $VMLINUX from vmlinuz" >&2
+    exit 1
+  fi
+
+  echo "extract: $VMLINUX"
+  python3 - "$ASSET_DIR/vmlinuz" "$ASSET_DIR/vmlinuz.zst" <<'PY'
+import sys
+from pathlib import Path
+
+source = Path(sys.argv[1]).read_bytes()
+magic = b"\x28\xb5\x2f\xfd"
+offset = source.find(magic)
+
+if offset < 0:
+    raise SystemExit("zstd payload not found in vmlinuz")
+
+Path(sys.argv[2]).write_bytes(source[offset:])
+PY
+
+  rm -f "$VMLINUX.tmp"
+  zstd -dc "$ASSET_DIR/vmlinuz.zst" > "$VMLINUX.tmp" 2>/dev/null || true
+
+  if [[ ! -s "$VMLINUX.tmp" ]]; then
+    echo "error: failed to extract $VMLINUX" >&2
+    rm -f "$VMLINUX.tmp" "$ASSET_DIR/vmlinuz.zst"
+    exit 1
+  fi
+
+  mv "$VMLINUX.tmp" "$VMLINUX"
+  rm -f "$ASSET_DIR/vmlinuz.zst"
+fi
 
 if [[ ! -f "$ASSET_DIR/overlay.raw" ]]; then
   echo "create: $ASSET_DIR/overlay.raw"

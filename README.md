@@ -96,7 +96,7 @@ The config file is JSON:
 {
   "cpuCount": 2,
   "memoryMB": 2048,
-  "kernel": "assets/ubuntu-resolute-arm64/Image",
+  "kernel": "assets/ubuntu-resolute-arm64/vmlinux",
   "initrd": "assets/ubuntu-resolute-arm64/initrd.img",
   "disk": "assets/ubuntu-resolute-arm64/root.squashfs",
   "diskReadOnly": true,
