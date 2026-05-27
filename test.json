@@ -1,0 +1,19 @@
+{
+  "cpuCount": 2,
+  "memoryMB": 2048,
+  "kernel": "assets/ubuntu-resolute-arm64/Image",
+  "initrd": "assets/ubuntu-resolute-arm64/initrd.img",
+  "disk": "assets/ubuntu-resolute-arm64/root.squashfs",
+  "diskReadOnly": true,
+  "extraDisks": [
+    {
+      "path": "assets/ubuntu-resolute-arm64/overlay.raw",
+      "readOnly": false
+    },
+    {
+      "path": "assets/ubuntu-resolute-arm64/seed.iso",
+      "readOnly": true
+    }
+  ],
+  "cmdline": "console=hvc0 root=/dev/vda rootfstype=squashfs ro overlayroot=crypt:dev=/dev/vdb,mkfs=1,timeout=30 ds=nocloud"
+}
