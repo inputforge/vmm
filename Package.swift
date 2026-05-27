@@ -3,16 +3,22 @@
 import PackageDescription
 
 let package = Package(
-    name: "swift-vm",
+    name: "vmm",
     platforms: [
         .macOS(.v12)
     ],
     products: [
-        .executable(name: "swift-vm", targets: ["swift-vm"])
+        .executable(name: "vmm", targets: ["vmm"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-argument-parser.git", from: "1.2.0")
     ],
     targets: [
         .executableTarget(
-            name: "swift-vm",
+            name: "vmm",
+            dependencies: [
+                .product(name: "ArgumentParser", package: "swift-argument-parser")
+            ],
             linkerSettings: [
                 .linkedFramework("Virtualization")
             ]

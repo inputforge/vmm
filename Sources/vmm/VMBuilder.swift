@@ -1,7 +1,12 @@
 import Foundation
 import Virtualization
 
-func buildConfiguration(from config: VMConfig, configURL: URL) throws -> VZVirtualMachineConfiguration {
+func buildConfiguration(
+    from config: VMConfig,
+    configURL: URL,
+    serialInput: FileHandle = .standardInput,
+    serialOutput: FileHandle = .standardOutput
+) throws -> VZVirtualMachineConfiguration {
     let kernelURL = try resolveExistingPath(config.kernel, from: config, configURL: configURL)
     let initrdURL = try resolveExistingPath(config.initrd, from: config, configURL: configURL)
     let diskURL = try resolveExistingPath(config.disk, from: config, configURL: configURL)
@@ -36,8 +41,8 @@ func buildConfiguration(from config: VMConfig, configURL: URL) throws -> VZVirtu
     vmConfig.networkDevices = [networkDevice]
 
     let serialAttachment = VZFileHandleSerialPortAttachment(
-        fileHandleForReading: .standardInput,
-        fileHandleForWriting: .standardOutput
+        fileHandleForReading: serialInput,
+        fileHandleForWriting: serialOutput
     )
     let serialPort = VZVirtioConsoleDeviceSerialPortConfiguration()
     serialPort.attachment = serialAttachment

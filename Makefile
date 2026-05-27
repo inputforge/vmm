@@ -1,5 +1,5 @@
-SWIFT_VM := .build/release/swift-vm
-ENTITLEMENTS := swift-vm.entitlements
+VMM := .build/release/vmm
+ENTITLEMENTS := vmm.entitlements
 CONFIG ?= test.json
 SIGN_IDENTITY ?= -
 
@@ -12,14 +12,14 @@ sign: build
 	codesign --force \
 		--entitlements $(ENTITLEMENTS) \
 		--sign "$(SIGN_IDENTITY)" \
-		$(SWIFT_VM)
+		$(VMM)
 
 run: sign
-	$(SWIFT_VM) run $(CONFIG)
+	$(VMM) run $(CONFIG)
 
 smoke: sign
-	! $(SWIFT_VM)
-	! $(SWIFT_VM) run missing.json
+	! $(VMM) nope
+	! $(VMM) run missing.json
 
 clean:
 	swift package clean

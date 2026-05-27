@@ -33,8 +33,8 @@ if [[ ! -f "$ASSET_DIR/overlay.raw" ]]; then
 fi
 
 cat > "$SEED_DIR/meta-data" <<'EOF'
-instance-id: swift-vm-resolute-arm64
-local-hostname: swift-vm
+instance-id: vmm-resolute-arm64
+local-hostname: vmm
 EOF
 
 cat > "$SEED_DIR/user-data" <<'EOF'
@@ -51,7 +51,7 @@ chpasswd:
 ssh_pwauth: true
 disable_root: false
 package_update: false
-final_message: "swift-vm cloud-init complete"
+final_message: "vmm cloud-init complete"
 EOF
 
 rm -f "$ASSET_DIR/seed.iso"

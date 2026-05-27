@@ -28,9 +28,6 @@ func enterRawMode() throws {
         atexit {
             restoreTerminalMode()
         }
-        signal(SIGTERM) { _ in
-            exit(128 + SIGTERM)
-        }
         registeredTerminalRestore = true
     }
 
