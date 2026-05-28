@@ -1,4 +1,5 @@
 {
+  "bootMode": "linux",
   "cpuCount": 2,
   "memoryMB": 2048,
   "kernel": "assets/ubuntu-resolute-arm64/vmlinux",

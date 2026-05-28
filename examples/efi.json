@@ -1,0 +1,7 @@
+{
+  "bootMode": "efi",
+  "cpuCount": 2,
+  "memoryMB": 4096,
+  "disk": "assets/ubuntu-efi/disk.raw",
+  "stateDir": "assets/ubuntu-efi/state"
+}

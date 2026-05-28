@@ -1,6 +1,6 @@
 VMM := .build/release/vmm
 ENTITLEMENTS := vmm.entitlements
-CONFIG ?= test.json
+CONFIG ?= examples/linux.json
 SIGN_IDENTITY ?= -
 
 .PHONY: build sign run smoke clean

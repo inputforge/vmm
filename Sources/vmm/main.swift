@@ -4,7 +4,7 @@ import Foundation
 struct VMM: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "vmm",
-        subcommands: [Run.self]
+        subcommands: [Run.self, DiskCommand.self]
     )
 }
 
@@ -55,19 +55,13 @@ struct Run: ParsableCommand {
     }
 
     private func writePIDFileIfNeeded() throws {
-        guard let pidFile else {
-            return
-        }
-
+        guard let pidFile else { return }
         let pid = ProcessInfo.processInfo.processIdentifier
         try "\(pid)\n".write(toFile: pidFile, atomically: true, encoding: .utf8)
     }
 
     private func removePIDFileIfNeeded() {
-        guard let pidFile else {
-            return
-        }
-
+        guard let pidFile else { return }
         try? FileManager.default.removeItem(atPath: pidFile)
     }
 }
