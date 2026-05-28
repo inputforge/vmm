@@ -38,6 +38,15 @@ struct ConvertCommand: ParsableCommand {
     }
 
     private func convert() async throws {
+        let inputURL  = URL(fileURLWithPath: input).resolvingSymlinksInPath()
+        let outputURL = URL(fileURLWithPath: output).resolvingSymlinksInPath()
+        guard inputURL != outputURL else {
+            throw ValidationError("input and output are the same file")
+        }
+        guard !FileManager.default.fileExists(atPath: output) else {
+            throw ValidationError("\(output): file already exists")
+        }
+
         let image = try QCOW2Image(url: URL(fileURLWithPath: input))
         let totalSize = image.size
 

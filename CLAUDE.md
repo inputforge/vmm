@@ -24,7 +24,7 @@ There is no formal test suite — `make smoke` is the only automated check.
 
 ## Architecture
 
-Single Swift executable target (`Sources/vmm/`) using `swift-argument-parser` and `Virtualization.framework`. Requires macOS 12+, Apple Silicon.
+Single Swift executable target (`Sources/vmm/`) using `swift-argument-parser` and `Virtualization.framework`. Requires macOS 13+, Apple Silicon.
 
 **Data flow for a `vmm run` invocation:**
 

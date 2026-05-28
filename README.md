@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- macOS 12 or newer
+- macOS 13 or newer
 - Apple Silicon host
 - Swift toolchain
 - Virtualization.framework entitlement when running the signed release binary

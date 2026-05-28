@@ -13,14 +13,14 @@ func buildConfiguration(
     switch config.bootMode {
     case "linux":
         guard let kernelPath = config.kernel,
-              let initrdPath = config.initrd,
               let cmdline = config.cmdline else {
-            throw ConfigError("bootMode 'linux' requires 'kernel', 'initrd', and 'cmdline'")
+            throw ConfigError("bootMode 'linux' requires 'kernel' and 'cmdline'")
         }
         let kernelURL = try resolveExistingPath(kernelPath, from: config, configURL: configURL)
-        let initrdURL = try resolveExistingPath(initrdPath, from: config, configURL: configURL)
         let loader = VZLinuxBootLoader(kernelURL: kernelURL)
-        loader.initialRamdiskURL = initrdURL
+        if let initrdPath = config.initrd {
+            loader.initialRamdiskURL = try resolveExistingPath(initrdPath, from: config, configURL: configURL)
+        }
         loader.commandLine = cmdline
         bootLoader = loader
         platform.machineIdentifier = VZGenericMachineIdentifier()
