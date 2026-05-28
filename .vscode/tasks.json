@@ -1,0 +1,21 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "swift: Build Debug vmm",
+            "type": "shell",
+            "command": "swift build --target vmm",
+            "options": { "cwd": "${workspaceFolder:vmm}" },
+            "group": "build",
+            "problemMatcher": ["$swiftc"]
+        },
+        {
+            "label": "swift: Build Release vmm",
+            "type": "shell",
+            "command": "swift build -c release --target vmm",
+            "options": { "cwd": "${workspaceFolder:vmm}" },
+            "group": "build",
+            "problemMatcher": ["$swiftc"]
+        }
+    ]
+}

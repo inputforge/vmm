@@ -4,7 +4,7 @@
 
 ## Requirements
 
-- macOS 12 or newer
+- macOS 13 or newer
 - Apple Silicon host
 - Swift toolchain
 - Virtualization.framework entitlement when running the signed release binary
@@ -33,7 +33,7 @@ vmm run [--pid-file <path>] [--socket <path>] <config.json>
 During development, run through SwiftPM:
 
 ```sh
-swift run vmm run test.json
+swift run vmm run examples/linux.json
 ```
 
 Run the signed release binary:
@@ -45,7 +45,7 @@ make run
 Use a different config with:
 
 ```sh
-make run CONFIG=/path/to/config.json
+make run CONFIG=examples/efi.json
 ```
 
 ## PID File
@@ -53,7 +53,7 @@ make run CONFIG=/path/to/config.json
 Pass `--pid-file` to write the running `vmm` process ID to a file:
 
 ```sh
-vmm run --pid-file /tmp/vmm.pid test.json
+vmm run --pid-file /tmp/vmm.pid examples/linux.json
 ```
 
 The file is removed when `vmm` exits cleanly, including after a handled `SIGTERM`.
@@ -65,7 +65,7 @@ By default, the VM console is attached to the current terminal using stdin/stdou
 Pass `--socket` to expose console input and output over a Unix socket instead:
 
 ```sh
-vmm run --socket /tmp/vmm.sock test.json
+vmm run --socket /tmp/vmm.sock examples/linux.json
 ```
 
 The VM remains running if a socket client disconnects. A later client can reconnect to the same socket path. Output produced while no client is connected is discarded.
@@ -90,10 +90,13 @@ On `SIGTERM`, `vmm` asks the VM to stop gracefully with `requestStop()`. If the 
 
 ## Configuration
 
-The config file is JSON:
+Config files live in `examples/`. Relative paths inside a config are resolved relative to the config file's directory.
+
+### Linux direct-boot (`examples/linux.json`)
 
 ```json
 {
+  "bootMode": "linux",
   "cpuCount": 2,
   "memoryMB": 2048,
   "kernel": "assets/ubuntu-resolute-arm64/vmlinux",
@@ -101,27 +104,65 @@ The config file is JSON:
   "disk": "assets/ubuntu-resolute-arm64/root.squashfs",
   "diskReadOnly": true,
   "extraDisks": [
-    {
-      "path": "assets/ubuntu-resolute-arm64/overlay.raw",
-      "readOnly": false
-    },
-    {
-      "path": "assets/ubuntu-resolute-arm64/seed.iso",
-      "readOnly": true
-    }
+    { "path": "assets/ubuntu-resolute-arm64/overlay.raw", "readOnly": false },
+    { "path": "assets/ubuntu-resolute-arm64/seed.iso",    "readOnly": true  }
   ],
-  "cmdline": "console=hvc0 root=/dev/vda rootfstype=squashfs ro"
+  "cmdline": "console=hvc0 root=/dev/vda rootfstype=squashfs ro overlayroot=crypt:dev=/dev/vdb,mkfs=1,timeout=30 ds=nocloud"
 }
 ```
 
-Relative paths are resolved relative to the config file location.
+| Field | Description |
+|---|---|
+| `bootMode` | `"linux"` — direct kernel boot |
+| `cpuCount` | Number of vCPUs |
+| `memoryMB` | RAM in MiB |
+| `kernel` | Path to uncompressed kernel image |
+| `initrd` | Path to initrd (optional) |
+| `cmdline` | Kernel command line |
+| `disk` | Primary virtio-blk disk |
+| `diskReadOnly` | Mount primary disk read-only (default `false`) |
+| `extraDisks` | Additional virtio-blk disks, each with `path` and `readOnly` |
+
+### EFI boot (`examples/efi.json`)
+
+```json
+{
+  "bootMode": "efi",
+  "cpuCount": 2,
+  "memoryMB": 4096,
+  "disk": "assets/ubuntu-efi/disk.raw",
+  "stateDir": "assets/ubuntu-efi/state"
+}
+```
+
+| Field | Description |
+|---|---|
+| `bootMode` | `"efi"` — EFI firmware boot |
+| `cpuCount` | Number of vCPUs |
+| `memoryMB` | RAM in MiB |
+| `disk` | Primary virtio-blk disk |
+| `stateDir` | Directory for EFI NVRAM and machine-id state |
+
+## Disk Utilities
+
+```sh
+vmm disk <subcommand>
+```
+
+| Subcommand | Description |
+|---|---|
+| `convert <input.qcow2> <output.raw>` | Convert a QCOW2 image to raw |
+| `create <path> <size>` | Create a new sparse raw image (`10G`, `512M`, `1T`, …) |
+| `resize <path> <size>` | Grow or shrink a raw image (warns before shrinking) |
+| `info <path>` | Print format, virtual size, and disk usage |
+| `clone <src> <dst>` | Copy-on-write clone on APFS, full copy otherwise |
 
 ## Make Targets
 
 ```sh
 make build    # Build release binary
 make sign     # Sign release binary with Virtualization entitlement
-make run      # Sign and run CONFIG, defaulting to test.json
+make run      # Sign and run CONFIG (default: examples/linux.json)
 make smoke    # Run basic CLI smoke tests
 make clean    # Clean SwiftPM build output
 ```

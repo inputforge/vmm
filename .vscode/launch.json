@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:vmm}",
+            "name": "Debug vmm",
+            "target": "vmm",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug vmm"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:vmm}",
+            "name": "Release vmm",
+            "target": "vmm",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release vmm"
+        }
+    ]
+}
