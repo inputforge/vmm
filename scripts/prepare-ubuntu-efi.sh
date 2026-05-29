@@ -50,11 +50,11 @@ EOF
 # VZDiskImageStorageDeviceAttachment does not accept ISO 9660 images.
 # Create a raw FAT16 disk image that the guest sees as a plain virtio-blk device.
 rm -f "$SEED_IMG"
-dd if=/dev/zero of="$SEED_IMG" bs=1024 count=4096 2>/dev/null
+dd if=/dev/zero of="$SEED_IMG" bs=1024 count=4096
 
 DEVICE=$(hdiutil attach -imagekey diskimage-class=CRawDiskImage -nomount "$SEED_IMG" | awk '{print $1}')
 
-newfs_msdos -F 12 -v CIDATA "$DEVICE" >/dev/null
+newfs_msdos -F 16 -v CIDATA "$DEVICE" >/dev/null
 
 diskutil mount "$DEVICE" >/dev/null
 MOUNTPOINT=$(diskutil info "$DEVICE" | awk -F': +' '/Mount Point/{print $2}')

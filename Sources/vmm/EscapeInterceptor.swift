@@ -29,6 +29,11 @@ final class EscapeInterceptor {
 
         while true {
             let n = Darwin.read(STDIN_FILENO, &buf, buf.count)
+            if n == -1 {
+                if errno == EINTR { continue }
+                fputs("\r\n[vmm: read error: \(String(cString: strerror(errno)))]\r\n", stderr)
+                return
+            }
             guard n > 0 else {
                 onEscape()
                 return
@@ -60,7 +65,12 @@ final class EscapeInterceptor {
             }
 
             if !out.isEmpty {
-                writeEnd.write(Data(out))
+                do {
+                    try writeEnd.write(contentsOf: out)
+                } catch {
+                    fputs("\r\n[vmm: pipe write error: \(error)]\r\n", stderr)
+                    return
+                }
             }
         }
     }
