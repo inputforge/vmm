@@ -9,6 +9,7 @@ func buildConfiguration(
 ) throws -> VZVirtualMachineConfiguration {
     let bootLoader: VZBootLoader
     let platform = VZGenericPlatformConfiguration()
+    var vmPersistedMAC: VZMACAddress? = nil
 
     switch config.bootMode {
     case "linux":
@@ -30,7 +31,7 @@ func buildConfiguration(
             throw ConfigError("bootMode 'efi' requires 'stateDir'")
         }
         let stateDirURL = config.resolvePath(stateDirPath, relativeTo: configURL)
-        let (nvramURL, machineIDURL) = try bootstrapStateDir(stateDirURL)
+        let (nvramURL, machineIDURL, persistedMAC) = try bootstrapStateDir(stateDirURL)
 
         let variableStore = VZEFIVariableStore(url: nvramURL)
         let loader = VZEFIBootLoader()
@@ -42,6 +43,7 @@ func buildConfiguration(
             throw ConfigError("invalid machine identifier in \(machineIDURL.path)")
         }
         platform.machineIdentifier = machineID
+        vmPersistedMAC = persistedMAC
 
     default:
         throw ConfigError("unknown bootMode '\(config.bootMode)'; expected 'linux' or 'efi'")
@@ -66,6 +68,9 @@ func buildConfiguration(
 
     let networkDevice = VZVirtioNetworkDeviceConfiguration()
     networkDevice.attachment = VZNATNetworkDeviceAttachment()
+    if let mac = vmPersistedMAC {
+        networkDevice.macAddress = mac
+    }
     vmConfig.networkDevices = [networkDevice]
 
     let serialAttachment = VZFileHandleSerialPortAttachment(
@@ -82,33 +87,49 @@ func buildConfiguration(
     return vmConfig
 }
 
-// Returns (nvramURL, machineIDURL). Creates the directory and both files on first run.
-// Errors if directory exists but either file is missing.
-private func bootstrapStateDir(_ dir: URL) throws -> (URL, URL) {
+// Returns (nvramURL, machineIDURL, macAddress). Creates the directory and all files on first run.
+// Errors if directory exists but any required file is missing.
+private func bootstrapStateDir(_ dir: URL) throws -> (URL, URL, VZMACAddress) {
     let nvramURL = dir.appendingPathComponent("nvram.bin")
     let machineIDURL = dir.appendingPathComponent("machineid")
+    let macAddrURL = dir.appendingPathComponent("macaddr")
     let fm = FileManager.default
 
     let dirExists = fm.fileExists(atPath: dir.path)
     let nvramExists = fm.fileExists(atPath: nvramURL.path)
     let machineIDExists = fm.fileExists(atPath: machineIDURL.path)
+    let macAddrExists = fm.fileExists(atPath: macAddrURL.path)
 
     if dirExists {
-        if !nvramExists || !machineIDExists {
-            var missing: [String] = []
-            if !nvramExists { missing.append("nvram.bin") }
-            if !machineIDExists { missing.append("machineid") }
+        var missing: [String] = []
+        if !nvramExists { missing.append("nvram.bin") }
+        if !machineIDExists { missing.append("machineid") }
+        if !missing.isEmpty {
             throw ConfigError("stateDir '\(dir.path)' exists but is missing: \(missing.joined(separator: ", "))")
         }
-        return (nvramURL, machineIDURL)
+        let macAddress: VZMACAddress
+        if macAddrExists {
+            let macString = try String(contentsOf: macAddrURL, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let mac = VZMACAddress(string: macString) else {
+                throw ConfigError("invalid MAC address in \(macAddrURL.path)")
+            }
+            macAddress = mac
+        } else {
+            // Migrate existing state dir: generate and persist a MAC
+            macAddress = VZMACAddress.randomLocallyAdministered()
+            try macAddress.string.write(to: macAddrURL, atomically: true, encoding: .utf8)
+        }
+        return (nvramURL, machineIDURL, macAddress)
     }
 
-    // First run: create directory + both files
+    // First run: create directory + all state files
     try fm.createDirectory(at: dir, withIntermediateDirectories: true)
     _ = try VZEFIVariableStore(creatingVariableStoreAt: nvramURL)
     let machineID = VZGenericMachineIdentifier()
     try machineID.dataRepresentation.write(to: machineIDURL)
-    return (nvramURL, machineIDURL)
+    let macAddress = VZMACAddress.randomLocallyAdministered()
+    try macAddress.string.write(to: macAddrURL, atomically: true, encoding: .utf8)
+    return (nvramURL, machineIDURL, macAddress)
 }
 
 private func buildStorageDevice(url: URL, readOnly: Bool) throws -> VZVirtioBlockDeviceConfiguration {

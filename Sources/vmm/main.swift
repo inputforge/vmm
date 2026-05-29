@@ -1,5 +1,14 @@
 import ArgumentParser
 import Foundation
+import Virtualization
+
+// Breaks the circular dependency between EscapeInterceptor (needs closure at init)
+// and VMRunner (doesn't exist yet when the interceptor is created). The action is
+// set once, before the interceptor thread starts, so no synchronization is needed.
+private final class EscapeHandle {
+    var action: (() -> Void)?
+    func invoke() { action?() }
+}
 
 struct VMM: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -35,22 +44,38 @@ struct Run: ParsableCommand {
         }
 
         let (vmConfigData, configURL) = try VMConfig.load(from: config)
-        let vmConfig = try buildConfiguration(
-            from: vmConfigData,
-            configURL: configURL,
-            serialInput: socketManager?.vmInput ?? .standardInput,
-            serialOutput: socketManager?.vmOutput ?? .standardOutput
-        )
 
-        if socketManager == nil {
+        var escapeInterceptor: EscapeInterceptor?
+        var pendingEscape: EscapeHandle?
+        let serialInput: FileHandle
+        if let mgr = socketManager {
+            serialInput = mgr.vmInput
+        } else {
             do {
                 try enterRawMode()
             } catch {
                 fputs("warning: failed to enter raw terminal mode: \(error)\n", stderr)
             }
+            fputs("[vmm: Ctrl+A X to exit]\r\n", stderr)
+            let handle = EscapeHandle()
+            pendingEscape = handle
+            let interceptor = EscapeInterceptor { handle.invoke() }
+            escapeInterceptor = interceptor
+            serialInput = interceptor.serialInput
         }
 
+        let vmConfig = try buildConfiguration(
+            from: vmConfigData,
+            configURL: configURL,
+            serialInput: serialInput,
+            serialOutput: socketManager?.vmOutput ?? .standardOutput
+        )
+
         let runner = VMRunner(configuration: vmConfig)
+        // Wire escape directly to runner.requestStop() before starting the interceptor
+        // thread, so the escape path never sends SIGTERM and has no handler-install race.
+        pendingEscape?.action = { runner.requestStop() }
+        escapeInterceptor?.start()
         try runner.run()
     }
 

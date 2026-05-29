@@ -44,6 +44,13 @@ final class VMRunner: NSObject, VZVirtualMachineDelegate {
         }
     }
 
+    func requestStop() {
+        DispatchQueue.main.async { [weak self] in
+            self?.terminationRequested = true
+            self?.requestGracefulStopIfPossible()
+        }
+    }
+
     private func installSignalHandlers() {
         signal(SIGTERM, SIG_IGN)
 

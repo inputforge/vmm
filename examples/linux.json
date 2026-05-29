@@ -2,17 +2,17 @@
   "bootMode": "linux",
   "cpuCount": 2,
   "memoryMB": 2048,
-  "kernel": "assets/ubuntu-resolute-arm64/vmlinux",
-  "initrd": "assets/ubuntu-resolute-arm64/initrd.img",
-  "disk": "assets/ubuntu-resolute-arm64/root.squashfs",
+  "kernel": "../assets/ubuntu-resolute-arm64/vmlinux",
+  "initrd": "../assets/ubuntu-resolute-arm64/initrd.img",
+  "disk": "../assets/ubuntu-resolute-arm64/root.squashfs",
   "diskReadOnly": true,
   "extraDisks": [
     {
-      "path": "assets/ubuntu-resolute-arm64/overlay.raw",
+      "path": "../assets/ubuntu-resolute-arm64/overlay.raw",
       "readOnly": false
     },
     {
-      "path": "assets/ubuntu-resolute-arm64/seed.iso",
+      "path": "../assets/ubuntu-resolute-arm64/seed.iso",
       "readOnly": true
     }
   ],
