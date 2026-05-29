@@ -1,5 +1,6 @@
 import ArgumentParser
 import Foundation
+import Virtualization
 
 struct VMM: ParsableCommand {
     static let configuration = CommandConfiguration(
@@ -35,22 +36,33 @@ struct Run: ParsableCommand {
         }
 
         let (vmConfigData, configURL) = try VMConfig.load(from: config)
-        let vmConfig = try buildConfiguration(
-            from: vmConfigData,
-            configURL: configURL,
-            serialInput: socketManager?.vmInput ?? .standardInput,
-            serialOutput: socketManager?.vmOutput ?? .standardOutput
-        )
 
-        if socketManager == nil {
+        var escapeInterceptor: EscapeInterceptor?
+        let serialInput: FileHandle
+        if let mgr = socketManager {
+            serialInput = mgr.vmInput
+        } else {
             do {
                 try enterRawMode()
             } catch {
                 fputs("warning: failed to enter raw terminal mode: \(error)\n", stderr)
             }
+            fputs("[vmm: Ctrl+A X to exit]\r\n", stderr)
+            let interceptor = EscapeInterceptor { kill(getpid(), SIGTERM) }
+            interceptor.start()
+            escapeInterceptor = interceptor
+            serialInput = interceptor.serialInput
         }
 
+        let vmConfig = try buildConfiguration(
+            from: vmConfigData,
+            configURL: configURL,
+            serialInput: serialInput,
+            serialOutput: socketManager?.vmOutput ?? .standardOutput
+        )
+
         let runner = VMRunner(configuration: vmConfig)
+        _ = escapeInterceptor  // keep alive for runner duration
         try runner.run()
     }
 
