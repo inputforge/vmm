@@ -1,4 +1,4 @@
-VMM := .build/release/vmm
+VMM := .build/apple/Products/Release/vmm
 ENTITLEMENTS := vmm.entitlements
 CONFIG ?= examples/linux.json
 SIGN_IDENTITY ?= -
@@ -6,7 +6,7 @@ SIGN_IDENTITY ?= -
 .PHONY: build sign run smoke clean
 
 build:
-	swift build -c release
+	swift build -c release --arch arm64 --arch x86_64
 
 sign: build
 	codesign --force \

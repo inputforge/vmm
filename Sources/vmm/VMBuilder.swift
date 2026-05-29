@@ -66,9 +66,17 @@ func buildConfiguration(
     }
     vmConfig.storageDevices = storageDevices
 
+    for disk in config.usbStorage ?? [] {
+        let url = try resolveExistingPath(disk.path, from: config, configURL: configURL)
+        let attachment = try VZDiskImageStorageDeviceAttachment(url: url, readOnly: true)
+        storageDevices.append(VZUSBMassStorageDeviceConfiguration(attachment: attachment))
+    }
+
     let networkDevice = VZVirtioNetworkDeviceConfiguration()
     networkDevice.attachment = VZNATNetworkDeviceAttachment()
-    if let mac = vmPersistedMAC {
+    if let macString = config.macAddress, let mac = VZMACAddress(string: macString) {
+        networkDevice.macAddress = mac
+    } else if let mac = vmPersistedMAC {
         networkDevice.macAddress = mac
     }
     vmConfig.networkDevices = [networkDevice]
@@ -137,7 +145,7 @@ private func buildStorageDevice(url: URL, readOnly: Bool) throws -> VZVirtioBloc
         url: url,
         readOnly: readOnly,
         cachingMode: .automatic,
-        synchronizationMode: .fsync
+        synchronizationMode: .none
     )
     return VZVirtioBlockDeviceConfiguration(attachment: attachment)
 }

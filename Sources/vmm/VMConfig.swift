@@ -16,6 +16,8 @@ struct VMConfig: Codable {
     let disk: String
     let diskReadOnly: Bool?
     let extraDisks: [VMDiskConfig]?
+    let usbStorage: [VMDiskConfig]?
+    let macAddress: String?
 
     static func load(from path: String) throws -> (VMConfig, URL) {
         let url = URL(fileURLWithPath: path)
