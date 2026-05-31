@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "vmm",
     platforms: [
-        .macOS("15.0")
+        .macOS(.v13)
     ],
     products: [
         .executable(name: "vmm", targets: ["vmm"])
