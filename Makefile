@@ -10,6 +10,7 @@ build:
 
 sign: build
 	codesign --force \
+		--options runtime \
 		--entitlements $(ENTITLEMENTS) \
 		--sign "$(SIGN_IDENTITY)" \
 		$(VMM)
